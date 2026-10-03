@@ -34,27 +34,14 @@ def _find_api_key(key_name: str) -> str:
     # 2. Local .env file
     local_env = BASE_DIR / ".env"
     if local_env.exists():
-        with open(local_env, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.startswith(f"{key_name}="):
-                    return line.strip().split("=", 1)[1].strip("\"' ")
+        try:
+            with open(local_env, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith(f"{key_name}="):
+                        return line.strip().split("=", 1)[1].strip("\"' ")
+        except Exception:
+            pass
 
-    # 3. Known workspace locations on developer box
-    candidate_envs = [
-        Path("/home/roni/Roni_workspace/helpotron/.env"),
-        Path("/home/roni/Roni_workspace/t2b/.env"),
-    ]
-    for env_path in candidate_envs:
-        if env_path.exists():
-            try:
-                with open(env_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        if line.startswith(f"{key_name}="):
-                            k = line.strip().split("=", 1)[1].strip("\"' ")
-                            if k:
-                                return k
-            except Exception:
-                pass
     return ""
 
 OPENROUTER_API_KEY = _find_api_key("OPENROUTER_API_KEY")

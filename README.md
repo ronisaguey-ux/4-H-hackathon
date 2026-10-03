@@ -4,7 +4,7 @@
 [![Competition](https://img.shields.io/badge/4--H-AI%20in%20Ag%20Challenge%202026-green.svg)](https://events.projectboard.world/4HAIinAg)
 [![Division](https://img.shields.io/badge/Division-Level%202%20(16--18)-blue.svg)](https://events.projectboard.world/4HAIinAg)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://python.org)
-[![Tests](https://img.shields.io/badge/Tests-19%20Passed%20(100%25)-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-21%20Passed%20(100%25)-success.svg)](tests/)
 [![Zero-Secrets](https://img.shields.io/badge/Security-Zero%20Secrets%20Committed-brightgreen.svg)](#security--privacy)
 
 **CornShield AI** is an AI-powered diagnostic and severity triage platform built specifically for Midwestern corn growers facing catastrophic foliar epidemics.
@@ -121,7 +121,8 @@ Click the **"Ambiguous / Non-Leaf"** button in the web app:
 │   ├── test_calibration.py   # Unit tests for confidence floor & unsure hedge
 │   ├── test_cv_analyzer.py   # Unit tests for lesion segmentation & severity
 │   ├── test_database.py      # Unit tests for SQLite scouting persistence
-│   └── test_knowledge_base.py# Unit tests for extension citation integrity
+│   ├── test_knowledge_base.py# Unit tests for extension citation integrity
+│   └── test_specimen_accuracy.py # Truth-table specimen accuracy & non-vacuity tests
 └── VIDEO_SCRIPT.md           # 3–5 minute video presentation script & storyboard
 ```
 
@@ -136,13 +137,14 @@ python3 -m unittest discover -s tests
 ```
 
 **Test Coverage:**
+* `test_specimen_accuracy.py`: Truth-table verification of every benchmark specimen, lesion geometry discriminator, and non-vacuity assertions.
 * `test_knowledge_base.py`: Verifies extension citations, active ingredient strings, and fallback mechanisms.
 * `test_cv_analyzer.py`: Validates color-space segmentation, leaf area %, severity grading, and overlay generation.
 * `test_calibration.py`: Tests boundary conditions (0.69 confidence, non-leaf inputs, differential formulation).
 * `test_database.py`: Tests SQLite scan insertions, retrieval, field plot filtering, and multi-day spread velocity.
 * `test_api.py`: Validates all Flask REST API endpoints end-to-end.
 
-**Result: 19 / 19 Tests Passing (100% Pass Rate).**
+**Result: 21 / 21 Tests Passing (100% Pass Rate).**
 
 ---
 

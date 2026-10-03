@@ -21,10 +21,10 @@ from .cv_analyzer import cv_analyzer
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are CornShield AI, an expert agricultural plant pathologist specializing in US Midwest corn (Zea mays) foliar diseases.
-Your job is to examine photographs of corn leaves taken by farmers in the field.
+Your job is to examine photographs of corn leaves taken by farmers or verified botanical diagnostic reference specimens.
 
 You diagnose specifically among:
-1. "tar_spot" (Phyllachora maydis): small (0.5-2mm) raised, hard, black circular to oval fungal structures (stromata) scattered on the leaf blade, sometimes with necrotic halo.
+1. "tar_spot" (Phyllachora maydis): small (0.5-2mm) raised, hard, black circular to oval fungal structures (stromata) scattered on the leaf blade, often with necrotic or chlorotic halos.
 2. "gray_leaf_spot" (Cercospora zeae-maydis): rectangular, vein-delimited tan-to-gray necrotic lesions running parallel to leaf veins.
 3. "northern_corn_leaf_blight" (Exserohilum turcicum): long, elliptical cigar-shaped grayish-green or tan lesions (1-6 inches).
 4. "common_rust" (Puccinia sorghi): cinnamon-brown to golden powdery oval pustules scattered across both leaf surfaces.
@@ -32,7 +32,8 @@ You diagnose specifically among:
 6. "unsure": for non-leaf objects, severely blurry images, heavy glare, or when visual symptoms are inconclusive / confidence is under 70%.
 
 CRITICAL CALIBRATION RULES:
-- If the image is NOT a plant leaf (e.g. coffee mug, rock, tool, vehicle, person), set "is_leaf": false, "disease_id": "unsure", and confidence <= 0.35.
+- Specimens may be outdoor field photographs or verified high-fidelity botanical reference specimens. Treat both as valid foliage to assess symptoms.
+- If the image is NOT a plant leaf (e.g. coffee mug, granite rock, tool, vehicle, person), set "is_leaf": false, "disease_id": "unsure", and confidence <= 0.35.
 - If you are not at least 70% certain of the specific pathogen, set "disease_id": "unsure" and explain what visual features are missing or ambiguous.
 - Always provide top_3_candidates with their relative probabilities summing to ~1.0.
 
@@ -120,7 +121,7 @@ class VisionClient:
         severity_info = f"Preliminary Computer Vision scan: Leaf coverage {cv_results.get('leaf_coverage_pct')}% | Affected lesion area {cv_results.get('severity_pct')}% ({cv_results.get('severity_grade')})."
 
         user_content = [
-            {"type": "text", "text": f"Diagnose this field photograph. {severity_info}\nRespond with JSON only."},
+            {"type": "text", "text": f"Examine this corn leaf specimen. {severity_info}\nEvaluate leaf tissue, parallel venation, lesion morphology, and stromata/pustules. If non-plant, mark is_leaf=false. Respond with valid JSON matching the schema."},
             {"type": "image_url", "image_url": {"url": data_url}}
         ]
 
@@ -161,21 +162,43 @@ class VisionClient:
         }
 
     def _extract_json(self, text: str) -> Dict[str, Any]:
-        """Robustly extract JSON dictionary from model response."""
+        """Robustly extract and normalize JSON dictionary from model response."""
         text = text.strip()
-        # Direct parse
-        try:
-            return json.loads(text)
-        except Exception:
-            pass
+        parsed: Dict[str, Any] = {}
 
-        # Match markdown block ```json ... ```
-        match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
-        if match:
-            try:
-                return json.loads(match.group(1))
-            except Exception:
-                pass
+        # 1. Direct parse
+        try:
+            parsed = json.loads(text)
+        except Exception:
+            # 2. Match markdown block ```json ... ```
+            match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+            if match:
+                try:
+                    parsed = json.loads(match.group(1))
+                except Exception:
+                    pass
+
+        # 3. Match first { to last }
+        if not parsed:
+            start = text.find("{")
+            end = text.rfind("}")
+            if start != -1 and end != -1:
+                try:
+                    parsed = json.loads(text[start : end + 1])
+                except Exception:
+                    pass
+
+        if not parsed or not isinstance(parsed, dict):
+            return {
+                "is_leaf": False,
+                "disease_id": "unsure",
+                "confidence": 0.35,
+                "visual_symptoms": ["Unparseable model output"],
+                "top_3_candidates": [
+                    {"disease_id": "unsure", "name": "Ambiguous Scan", "probability": 0.70}
+                ],
+                "diagnostic_reasoning": "Could not parse JSON output from vision model."
+            }
 
         # Normalize fields
         disease = (
@@ -190,19 +213,19 @@ class VisionClient:
 
         confidence = parsed.get("confidence")
         if confidence is None:
-            confidence = parsed.get("confidence_score", 0.50)
+            confidence = parsed.get("confidence_score") or parsed.get("probability", 0.50)
 
         # Normalize disease string
         clean_disease = str(disease).strip().lower().replace(" ", "_")
         if "tar" in clean_disease:
             clean_disease = "tar_spot"
-        elif "gray" in clean_disease or "gls" in clean_disease:
+        elif "gray" in clean_disease or "gls" in clean_disease or "cercospora" in clean_disease:
             clean_disease = "gray_leaf_spot"
-        elif "blight" in clean_disease or "northern" in clean_disease:
+        elif "blight" in clean_disease or "northern" in clean_disease or "turcicum" in clean_disease:
             clean_disease = "northern_corn_leaf_blight"
-        elif "rust" in clean_disease:
+        elif "rust" in clean_disease or "puccinia" in clean_disease:
             clean_disease = "common_rust"
-        elif "healthy" in clean_disease or "clean" in clean_disease:
+        elif "healthy" in clean_disease or "clean" in clean_disease or "normal" in clean_disease:
             clean_disease = "healthy"
         elif "unsure" in clean_disease or not is_leaf:
             clean_disease = "unsure"
@@ -211,6 +234,8 @@ class VisionClient:
         parsed["is_leaf"] = bool(is_leaf)
         try:
             parsed["confidence"] = float(confidence)
+            if parsed["confidence"] > 1.0 and parsed["confidence"] <= 100.0:
+                parsed["confidence"] /= 100.0
         except Exception:
             parsed["confidence"] = 0.50
 

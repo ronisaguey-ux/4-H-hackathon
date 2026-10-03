@@ -174,12 +174,15 @@ function renderDiagnosisResult(data, originalImageUrl) {
   document.getElementById('diseaseNameText').textContent = d.disease_name;
   document.getElementById('pathogenText').textContent = `Pathogen: ${t.pathogen}`;
 
-  // Engine badge
+  // Engine badge (Truthful reporting of inference source)
   const engineBadge = document.getElementById('engineBadge');
-  if (d.inference_engine && d.inference_engine.includes('cloud_vision')) {
-    engineBadge.textContent = 'Multimodal Vision AI';
+  if (d.inference_engine && d.inference_engine.startsWith('cloud_vision')) {
+    const modelName = d.inference_engine.replace('cloud_vision_', '').split('/').pop();
+    engineBadge.textContent = `Cloud Vision AI (${modelName})`;
+  } else if (d.inference_engine && d.inference_engine.includes('fallback')) {
+    engineBadge.textContent = 'Local CV Fallback (Cloud Offline)';
   } else {
-    engineBadge.textContent = 'Local CV Engine';
+    engineBadge.textContent = 'Local CV Engine (100% Offline)';
   }
 
   // Confidence
