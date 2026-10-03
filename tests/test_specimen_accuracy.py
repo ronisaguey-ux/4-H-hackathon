@@ -64,6 +64,59 @@ class TestSpecimenAccuracy(unittest.TestCase):
                     cand_ids = [c["disease_id"] for c in cal.get("top_candidates", [])]
                     self.assertIn(expected_disease, cand_ids, msg)
 
+    def test_resolution_sweep(self):
+        """Verify scale invariance across all benchmark specimens over resolutions from 0.15x to 1.5x."""
+        cases = [
+            ("tar_spot_specimen", "tar_spot", "confident"),
+            ("common_rust_specimen", "common_rust", "confident"),
+            ("northern_blight_specimen", "northern_corn_leaf_blight", "confident"),
+            ("healthy_leaf_specimen", "healthy", "confident"),
+            ("gray_leaf_spot_specimen", "gray_leaf_spot", "confident_or_hedge"),
+            ("ambiguous_specimen", "unsure", "must_hedge"),
+        ]
+        scales = (1.5, 1.0, 0.75, 0.5, 0.35, 0.25, 0.15)
+
+        for base_name, expected_disease, expectation in cases:
+            img_path = self.samples_dir / f"{base_name}.jpg"
+            self.assertTrue(img_path.exists(), f"Missing test specimen: {img_path}")
+            orig_img = Image.open(img_path)
+            orig_w, orig_h = orig_img.size
+
+            for scale in scales:
+                new_w = max(1, int(round(orig_w * scale)))
+                new_h = max(1, int(round(orig_h * scale)))
+                resample = Image.Resampling.LANCZOS if scale > 1.0 else Image.Resampling.BILINEAR
+                resized = orig_img.resize((new_w, new_h), resample)
+
+                res = self.analyzer.analyze_leaf_image(resized)
+                loc = res["local_diagnosis"]
+                cal = self.calibrator.calibrate_diagnosis(
+                    raw_disease_id=loc["disease_id"],
+                    raw_confidence=loc["confidence"],
+                    is_leaf=res["is_leaf"],
+                    leaf_coverage_pct=res["leaf_coverage_pct"],
+                    top_candidates=loc.get("top_3_candidates")
+                )
+
+                msg = (
+                    f"Scale {scale} ({new_w}x{new_h}) failed on {base_name}: "
+                    f"got {cal['disease_id']} (conf={cal['confidence']}, is_confident={cal['is_confident']})"
+                )
+
+                if expectation == "confident":
+                    self.assertTrue(cal["is_confident"], msg)
+                    self.assertEqual(cal["disease_id"], expected_disease, msg)
+                elif expectation == "must_hedge":
+                    self.assertFalse(cal["is_confident"], msg)
+                    self.assertEqual(cal["disease_id"], "unsure", msg)
+                elif expectation == "confident_or_hedge":
+                    if cal["is_confident"]:
+                        self.assertEqual(cal["disease_id"], expected_disease, msg)
+                    else:
+                        self.assertEqual(cal["disease_id"], "unsure", msg)
+                        cand_ids = [c["disease_id"] for c in cal.get("top_candidates", [])]
+                        self.assertIn(expected_disease, cand_ids, msg)
+
     def test_non_vacuity_confidence_floor(self):
         """Assert that if confidence floor is disabled (0.0), below-floor hedging fails.
         A test suite that cannot fail measures nothing."""

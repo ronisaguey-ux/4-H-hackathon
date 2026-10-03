@@ -137,14 +137,15 @@ python3 -m unittest discover -s tests
 ```
 
 **Test Coverage:**
-* `test_specimen_accuracy.py`: Truth-table verification of every benchmark specimen, lesion geometry discriminator, and non-vacuity assertions.
+* `test_specimen_accuracy.py`: Truth-table verification of every benchmark specimen, scale-invariant resolution sweep (0.15x–1.5x across all specimens), lesion geometry discriminator, and non-vacuity assertions.
 * `test_knowledge_base.py`: Verifies extension citations, active ingredient strings, and fallback mechanisms.
 * `test_cv_analyzer.py`: Validates color-space segmentation, leaf area %, severity grading, and overlay generation.
 * `test_calibration.py`: Tests boundary conditions (0.69 confidence, non-leaf inputs, differential formulation).
 * `test_database.py`: Tests SQLite scan insertions, retrieval, field plot filtering, and multi-day spread velocity.
 * `test_api.py`: Validates all Flask REST API endpoints end-to-end.
 
-**Result: 21 / 21 Tests Passing (100% Pass Rate).**
+**Result: 22 / 22 Tests Passing (100% Pass Rate).**
+
 
 ---
 
