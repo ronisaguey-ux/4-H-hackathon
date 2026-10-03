@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CornShield AI — Midwest Corn Foliar Disease Early-Detection & Severity Engine</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top App Navigation -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">CornShield <span>AI</span></h1>
+          <p class="brand-subtitle">National 4-H Ag Challenge &bull; Level 2 (16–18)</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <div id="connectionBadge" class="status-pill status-online">
+          <span class="pulse-dot"></span>
+          <span id="connectionText">Checking Vision Model...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+
+    <!-- Hero / Problem Pitch -->
+    <section class="hero-strip">
+      <div class="hero-text">
+        <span class="section-tag">Midwest Corn Belt Diagnostic Service</span>
+        <h2>Early Tar Spot &amp; Foliar Blight Detection From Field Photographs</h2>
+        <p>
+          Targeting <strong>Tar Spot</strong> (<em>Phyllachora maydis</em>) and destructive foliar blights in Iowa &amp; the Corn Belt.
+          Delivers sub-second disease diagnosis, quantitative severity percentage, and <strong>authoritative Land-Grant Extension treatments</strong> before canopy collapse.
+        </p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-box">
+          <span class="stat-num">50–60</span>
+          <span class="stat-unit">bu/acre</span>
+          <span class="stat-lbl">Yield loss prevented in severe epidemics (ISU Ext. CPN-2012)</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">$0.0015</span>
+          <span class="stat-unit">/ scan</span>
+          <span class="stat-lbl">AI scan cost vs. $35 mailed clinic sample fee</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Field & Plot Selector -->
+    <div class="field-bar">
+      <label for="activeFieldInput">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Active Field Plot:
+      </label>
+      <input type="text" id="activeFieldInput" list="fieldList" value="North Pivot - Section 4" placeholder="Enter Field or Plot Name">
+      <datalist id="fieldList">
+        <option value="North Pivot - Section 4">
+        <option value="Section 12 - South Bottom">
+        <option value="Home Quarter 80">
+        <option value="River Flat Plot B">
+      </datalist>
+    </div>
+
+    <!-- 1-Click Evaluation Specimens for Judges -->
+    <section class="specimen-section">
+      <div class="section-head">
+        <div>
+          <h3>Judge Evaluation Specimens (1-Click Test)</h3>
+          <p>Instant evaluation with verified botanical field samples:</p>
+        </div>
+        <span class="badge-pill">Rubric Verification</span>
+      </div>
+      <div class="sample-grid" id="sampleGrid">
+        <button class="sample-btn" onclick="testSample('tar_spot')">
+          <span class="sample-badge badge-danger">Tar Spot</span>
+          <strong>Tar Spot (Severe)</strong>
+          <small>Black stromata + fisheye halos</small>
+        </button>
+        <button class="sample-btn" onclick="testSample('gray_leaf_spot')">
+          <span class="sample-badge badge-warning">Gray Leaf Spot</span>
+          <strong>Gray Leaf Spot</strong>
+          <small>Rectangular vein-delimited lesions</small>
+        </button>
+        <button class="sample-btn" onclick="testSample('northern_blight')">
+          <span class="sample-badge badge-warning">Northern Blight</span>
+          <strong>Northern Corn Leaf Blight</strong>
+          <small>Cigar-shaped elliptical lesions</small>
+        </button>
+        <button class="sample-btn" onclick="testSample('common_rust')">
+          <span class="sample-badge badge-info">Common Rust</span>
+          <strong>Common Rust</strong>
+          <small>Cinnamon-brown powdery pustules</small>
+        </button>
+        <button class="sample-btn" onclick="testSample('healthy')">
+          <span class="sample-badge badge-success">Healthy Foliage</span>
+          <strong>Healthy Corn Leaf</strong>
+          <small>Clean chlorophyll, no lesions</small>
+        </button>
+        <button class="sample-btn sample-btn-hedged" onclick="testSample('ambiguous')">
+          <span class="sample-badge badge-dark">Calibration Test</span>
+          <strong>Ambiguous / Non-Leaf</strong>
+          <small>Hedges safely &bull; Unsure path</small>
+        </button>
+      </div>
+    </section>
+
+    <!-- Main Scanner Interface -->
+    <section class="scanner-card">
+      <div class="upload-dropzone" id="dropzone">
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" class="file-hidden">
+        <input type="file" id="fileInput" accept="image/*" class="file-hidden">
+
+        <div class="upload-prompt" id="uploadPrompt">
+          <div class="camera-icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <h3>Take or Upload Leaf Photo</h3>
+          <p>Photograph a single corn leaf blade showing suspicious lesions</p>
+
+          <div class="button-row">
+            <button class="btn btn-primary" onclick="document.getElementById('cameraInput').click()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Field Camera
+            </button>
+            <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload Image
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview during processing -->
+        <div class="upload-preview-container" id="previewContainer" style="display:none;">
+          <img id="imagePreview" alt="Field specimen preview">
+          <div class="preview-overlay" id="loadingOverlay" style="display:none;">
+            <div class="spinner"></div>
+            <p id="loadingStatusText">Analyzing leaf geometry &amp; lesions...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Section (Populates dynamically) -->
+    <section class="result-section" id="resultSection" style="display:none;">
+
+      <!-- Unsure / Ambiguous Banner (Visible when calibrated unconfirmed) -->
+      <div class="calibration-alert" id="calibrationAlert" style="display:none;">
+        <div class="alert-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="alert-content">
+          <h4>DIAGNOSIS UNCONFIRMED — CONFIDENCE BELOW ACTION FLOOR (70%)</h4>
+          <p id="hedgeReasonText"></p>
+          <div class="top-differentials">
+            <strong>Top Candidate Differentials:</strong>
+            <div id="differentialsList" class="diff-chips"></div>
+          </div>
+          <div class="retake-box">
+            <strong>Field Retake Protocol:</strong>
+            <ol id="retakeInstructionsList"></ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Diagnosis Card -->
+      <div class="card result-card">
+        <div class="result-top-grid">
+
+          <!-- Left: Disease Identification -->
+          <div class="diagnosis-summary">
+            <div class="meta-row">
+              <span class="crop-tag">Crop: Corn (Zea mays)</span>
+              <span id="engineBadge" class="engine-tag">Vision AI</span>
+            </div>
+            <h2 id="diseaseNameText" class="disease-title">Analyzing...</h2>
+            <p id="pathogenText" class="pathogen-name">Pathogen: Identifying...</p>
+
+            <div class="confidence-box">
+              <div class="confidence-label">
+                <span>Diagnostic Confidence</span>
+                <strong id="confidenceVal">--%</strong>
+              </div>
+              <div class="progress-track">
+                <div id="confidenceBar" class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <small class="conf-floor-note">Confidence Floor: 70% required for field action</small>
+            </div>
+
+            <div class="reasoning-box">
+              <strong>Symptom Profile:</strong>
+              <p id="reasoningText"></p>
+            </div>
+          </div>
+
+          <!-- Right: Severity & Visual Segmentation -->
+          <div class="severity-panel">
+            <div class="severity-header">
+              <div>
+                <span class="panel-eyebrow">Leaf Area Affected</span>
+                <div class="severity-big-number">
+                  <span id="severityPctText">0.0%</span>
+                  <span id="severityGradeBadge" class="grade-badge">Early</span>
+                </div>
+              </div>
+              <div class="view-toggle">
+                <button id="toggleOriginalBtn" class="toggle-btn active" onclick="switchImageView('original')">Photo</button>
+                <button id="toggleMaskBtn" class="toggle-btn" onclick="switchImageView('mask')">AI Lesion Mask</button>
+              </div>
+            </div>
+
+            <div class="interactive-viewer">
+              <img id="resultImageOriginal" alt="Original Photo" class="viewer-img">
+              <img id="resultImageMask" alt="AI Lesion Segmentation Mask" class="viewer-img" style="display:none;">
+            </div>
+
+            <div class="mask-legend">
+              <span class="legend-item"><span class="dot dot-lesion"></span> Necrotic Lesion</span>
+              <span class="legend-item"><span class="dot dot-healthy"></span> Healthy Chlorophyll</span>
+              <span class="legend-item"><span class="dot dot-bg"></span> Background</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Extension Sourced Treatment Card -->
+        <div class="treatment-card" id="treatmentCard">
+          <div class="treatment-header">
+            <div class="treatment-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div>
+              <span class="verified-pill">Land-Grant Extension Ground Truth</span>
+              <h3>Agronomic Treatment &amp; Management Protocol</h3>
+              <p class="citation-callout">Strictly quoted from University Extension — Zero AI Hallucination</p>
+            </div>
+          </div>
+
+          <div class="treatment-body">
+            <div class="treatment-text-block">
+              <strong class="block-title">Recommended Action:</strong>
+              <p id="treatmentText"></p>
+            </div>
+
+            <div class="spec-grid">
+              <div class="spec-cell">
+                <span class="spec-lbl">Active Ingredients / FRAC</span>
+                <strong id="activeIngredientsText">--</strong>
+              </div>
+              <div class="spec-cell">
+                <span class="spec-lbl">Application Rate</span>
+                <strong id="rateText">--</strong>
+              </div>
+              <div class="spec-cell">
+                <span class="spec-lbl">Spray Interval</span>
+                <strong id="intervalText">--</strong>
+              </div>
+              <div class="spec-cell">
+                <span class="spec-lbl">Pre-Harvest Interval (PHI)</span>
+                <strong id="phiText">--</strong>
+              </div>
+              <div class="spec-cell">
+                <span class="spec-lbl">Re-Entry Interval (REI)</span>
+                <strong id="reiText">--</strong>
+              </div>
+              <div class="spec-cell">
+                <span class="spec-lbl">Estimated Cost / Acre</span>
+                <strong id="costText">--</strong>
+              </div>
+            </div>
+
+            <div class="safety-box">
+              <strong>Worker Safety &amp; Environmental Protection:</strong>
+              <p id="safetyNotesText"></p>
+            </div>
+
+            <div class="source-citation-bar">
+              <span class="citation-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </span>
+              <span>Source: <a id="sourceLink" href="#" target="_blank" rel="noopener noreferrer">Crop Protection Network &bull; ISU Extension</a></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Field Log Confirmation -->
+        <div class="log-confirmation-strip">
+          <div>
+            <strong>Recorded to Field History:</strong>
+            <span id="savedFieldTarget">North Pivot - Section 4</span>
+            <small id="scanIdDisplay">(Scan #--)</small>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="scrollToHistory()">View Spread Timeline</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Field Spread Tracker & History Log -->
+    <section class="history-section" id="historySection">
+      <div class="section-head">
+        <div>
+          <h3>Field Disease Progression Tracker</h3>
+          <p>Multi-day scouting history for <strong id="activeFieldName">North Pivot - Section 4</strong></p>
+        </div>
+        <div class="filter-wrap">
+          <select id="fieldFilterSelect" onchange="loadHistory(this.value)">
+            <option value="all">All Fields</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Field Analytics Card -->
+      <div class="analytics-card" id="analyticsCard">
+        <div class="analytics-stat">
+          <span class="stat-title">Current Trajectory</span>
+          <h4 id="fieldTrendText" class="stat-highlight">Loading...</h4>
+          <p id="fieldTrajectoryDesc"></p>
+        </div>
+        <div class="analytics-action">
+          <span class="stat-title">Agronomic Recommendation</span>
+          <p id="fieldActionRec">Conduct baseline scouting.</p>
+        </div>
+      </div>
+
+      <!-- History Table / Cards -->
+      <div class="table-container">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Scan Preview</th>
+              <th>Date / Time</th>
+              <th>Field Plot</th>
+              <th>Diagnosis</th>
+              <th>Severity</th>
+              <th>Confidence</th>
+              <th>Action Status</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <tr>
+              <td colspan="7" class="empty-state">Loading scouting history...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Technical Transparency & Limitations Panel -->
+    <section class="transparency-section">
+      <div class="section-head">
+        <div>
+          <h3>Agronomic &amp; Technical Limitations</h3>
+          <p>Domain safety boundaries — what this diagnostic tool can and cannot do</p>
+        </div>
+        <span class="badge-pill">Scientific Integrity</span>
+      </div>
+
+      <div class="limitations-grid">
+        <div class="limit-card">
+          <div class="limit-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <h4>Nutritional Mimics &amp; Abiotic Stress</h4>
+          <p>
+            Severe nitrogen deficiency causes V-shaped yellow chlorosis along the leaf midrib, and drought stress produces leaf rolling.
+            CornShield AI isolates fungal necrotic lesions and hedges to the "unsure" path when abiotic chlorosis is predominant without characteristic fungal structures.
+          </p>
+        </div>
+
+        <div class="limit-card">
+          <div class="limit-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+          </div>
+          <h4>Insect Frass vs. Tar Spot Stromata</h4>
+          <p>
+            Insect feces (frass) closely mimic tar spot fungal stromata. The app's calibration engine explicitly prompts growers to execute the physical
+            <strong>"Water Rub Test"</strong>: if black specks wash off when rubbed with a moist rag, they are frass and require no chemical spray.
+          </p>
+        </div>
+
+        <div class="limit-card">
+          <div class="limit-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+          </div>
+          <h4>Field Decision-Support, Not Regulatory PCR</h4>
+          <p>
+            CornShield AI provides rapid in-field decision triage to time fungicide applications before canopy loss.
+            It does not replace official USDA-APHIS or Land-Grant molecular PCR assays required for interstate quarantine or certified seed export.
+          </p>
+        </div>
+
+        <div class="limit-card">
+          <div class="limit-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h4>Smallholder Affordability &amp; Economics</h4>
+          <p>
+            Running an inference pass on Gemini 3.8/3.1 Flash costs <strong>$0.0015 per scan</strong> (0.15 cents).
+            A 500-acre family farm can run 50 scouting scans across all field quadrants during peak VT–R3 silking for under $0.10 total, saving thousands in potential crop loss.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p>
+        <strong>CornShield AI</strong> &bull; National 4-H AI in Agriculture Challenge (Fall 2026) &bull; Level 2 (Ages 16–18) Division
+      </p>
+      <p class="sub-footer">
+        Extension Citations: Crop Protection Network (CPN-2012, CPN-2015), Iowa State University Extension (IPM 0044), Purdue Extension (BP-89-W).
+      </p>
+    </div>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

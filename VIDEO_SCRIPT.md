@@ -1,0 +1,34 @@
+# VIDEO PRESENTATION SCRIPT & STORYBOARD (3–5 MINUTES)
+
+**Project:** CornShield AI — Midwest Corn Foliar Disease Early-Detection & Severity Engine  
+**Competition:** National 4-H AI in Agriculture Challenge (Fall 2026)  
+**Division:** Level 2 (Ages 16–18 Division)  
+**Target Duration:** 4 minutes 15 seconds  
+**Format:** Screen recording of live working app + webcam PIP (Picture-in-Picture) + field camera demonstration  
+
+---
+
+## Storyboard & Timing Breakdown
+
+| Timecode | Segment | Visual On Screen | Narration / Speaking Script |
+|---|---|---|---|
+| **0:00 – 0:45** | **The Local Problem: Midwest Tar Spot Crisis** | Split screen: Presenter holding a corn leaf with black specks, then transitioning to a map of Iowa and the Corn Belt showing Tar Spot spread. | *"Hi judges! My name is Roni Saguey, and this is CornShield AI for the National 4-H AI in Agriculture Challenge. In Iowa and across the Corn Belt, farmers plant over 90 million acres of corn. But over the last few years, a devastating fungal pathogen called Tar Spot has swept through our fields, causing yield losses of 50 to 60 bushels per acre and costing over $1.5 billion. When farmers scout their fields between tasseling and grain fill, they spot tiny black flecks on their leaves. Is it Tar Spot, or is it just harmless bug poop—insect frass? Mailing a sample to the Iowa State University plant clinic costs $35 and takes up to 10 days. But Tar Spot can defoliate the ear leaf in less than two weeks. If you guess and spray 500 acres on a false alarm, you waste $18,000. If you wait for the mail, your grain yield collapses. We built CornShield AI to solve this exact dilemma right from a phone in the field."* |
+| **0:45 – 1:35** | **Live App Demonstration: Scanning a Field Leaf** | Cut to live browser/mobile screen of CornShield AI running on `localhost:5000` (or phone camera). Click "Tar Spot (Severe Outbreak)" specimen or snap photo with camera. | *"Here is the live CornShield AI web app running on my phone. Let’s simulate what a farmer does in the field. I tap to photograph a suspicious corn leaf. In under one second, the engine processes the image. Look at the result card: it correctly identifies Tar Spot (Phyllachora maydis) with 95% confidence. But we didn’t stop at just naming the disease—we built what almost every competing entry skips: quantitative disease severity."* |
+| **1:35 – 2:20** | **Severity Analysis & Visual Lesion Segmentation** | Click the "AI Lesion Mask" toggle button in the UI. Point to the severity percentage (5.3% Moderate) and the red/orange highlighted lesions. | *"CornShield AI uses a color-space segmentation algorithm built right into Python with Pillow. It measures the exact percentage of leaf area affected—here, 5.3%, placing it in the 'Moderate' severity grade. Notice this toggle: when I switch from 'Photo' to 'AI Lesion Mask', our computer vision pipeline highlights every necrotic fungal stroma in bright red, isolates healthy green chlorophyll in emerald, and dims the background. A grower can instantly see where the pathogen is colonizing the leaf blade."* |
+| **2:20 – 3:00** | **Authoritative Extension Treatment (Zero Hallucination)** | Scroll down to the Treatment card in the UI. Highlight active ingredients, FRAC groups, application rate, PHI, cost, and clickable citation link. | *"Now, look at the treatment section. In farming, a hallucinated pesticide dose is both illegal and dangerous. We strictly forbid the AI from inventing chemical treatments. Instead, our app queries a hand-curated Land-Grant Extension knowledge base sourced directly from the Crop Protection Network and Iowa State University Extension Publication IPM 0044. It shows the exact active ingredients—Mefentrifluconazole plus Pyraclostrobin, FRAC Groups 3 and 11—the exact application rate of 8.0 fluid ounces per acre, a 30-day pre-harvest interval, the 12-hour re-entry interval, and an estimated cost of $32 to $42 an acre, with a direct link to the university extension bulletin."* |
+| **3:00 – 3:35** | **The Awkward-Image Test: Calibrated 'Unsure' Path** | Click the 1-click test button for "Ambiguous / Non-Leaf (Rock / Glare)". Show the amber warning banner and retake protocol. | *"Now, let's test what happens when someone feeds the app an ambiguous or non-leaf image—like this speckled granite rock. An uncalibrated AI will make a confident wrong guess. But watch CornShield AI: our calibration engine detects that leaf coverage is 0.0%, and our 70% confidence floor intercepts the diagnosis. The app immediately hedges to the 'Unsure' path. It displays the top candidate differentials and gives the farmer a physical protocol: wipe the spots with a damp cloth—the 'Water Rub Test'. If it wipes off, it's insect frass, not tar spot. The app refuses to give bad advice."* |
+| **3:35 – 4:05** | **Field Spread Tracker & Smallholder Affordability** | Scroll to the "Field Disease Progression Tracker" section. Show the multi-day spread curve for "North Pivot - Section 4" and the SQLite history table. | *"Every scan is saved to an embedded SQLite database. Here in the Field Disease Progression Tracker, a grower can see previous scans for their field plot over time—tracking spread from 0.2% baseline, to 3.4% early, to 14.2% moderate—warning them that the fungicide window is closing. And best of all, running a scan costs just 0.15 cents ($0.0015) using lightweight multimodal flash models, or zero cents with our offline local CV engine. A 500-acre family farm can run 50 scans across their fields for under ten cents total."* |
+| **4:05 – 4:25** | **Limitations & Conclusion** | Presenter on camera with live app in hand. Closing statement. | *"CornShield AI is a field decision-support tool, not a regulatory PCR test, and it requires soil nitrate testing to separate true nitrogen yellowing from fungal blights. But it puts the power of Land-Grant Extension plant pathology directly into the hands of American farmers and 4-H youth, protecting our food supply and farm livelihoods. Thank you, judges!"* |
+
+---
+
+## Production & Recording Checklist for Video Submitter
+
+- [ ] Record in 1080p landscape format (16:9).
+- [ ] Ensure clear microphone audio (use lapel or headset mic; avoid room echo).
+- [ ] Demonstrate the live web application on screen (start the app with `./run.sh` or `python3 app.py`).
+- [ ] Show the camera capture or 1-click specimen buttons in action.
+- [ ] Explicitly demonstrate the toggle between the "Photo" and "AI Lesion Mask".
+- [ ] Show the "Ambiguous / Non-Leaf" test triggering the amber calibrated "unsure" path.
+- [ ] Keep total runtime between 3 minutes 30 seconds and 4 minutes 30 seconds (within the 3–5 min window).
+- [ ] Upload video to YouTube (Unlisted or Public) or Vimeo, and paste the URL into the ProjectBoard submission portal before November 15, 2026.

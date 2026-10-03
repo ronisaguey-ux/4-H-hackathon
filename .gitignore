@@ -1,0 +1,32 @@
+# Environments and API Keys
+.env
+*.env
+.env.*
+!.env.example
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.cache
+
+# Databases and user uploads
+data/scans.db
+uploads/*
+!uploads/.gitkeep
+
+# IDE and OS files
+.DS_Store
+.vscode/
+.idea/

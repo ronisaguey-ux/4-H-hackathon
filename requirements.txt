@@ -1,0 +1,6 @@
+# CornShield AI - Dependencies
+flask>=2.3.0
+pillow>=9.5.0
+httpx>=0.24.0
+pydantic>=2.0.0
+pytest>=7.0.0
